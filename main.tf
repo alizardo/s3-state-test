@@ -1,5 +1,7 @@
 provider "aws" {
   region = "eu-west-1"
+  access_key = "${var.aws_access_key}"
+  secret_key = "${var.aws_secret_key}"
 }
 
 # Create a VPC to launch our instances into
@@ -113,11 +115,27 @@ resource "aws_instance" "ec2" {
   subnet_id = "${aws_subnet.default.id}"
 }
 
-#backend make sure to change bucket name 
 terraform {
   backend "s3" {
-    bucket = "infra190918"
+    bucket = "deploy-tf-states"
     key    = "terraform.tfstate"
     region = "eu-west-1"
   }
+}
+
+resource "aws_instance" "ec3" {
+
+  instance_type = "t2.micro"
+
+  # Lookup the correct AMI based on the region
+  # we specified
+  ami = "ami-00035f41c82244dab"
+
+  # Our Security group to allow HTTP and SSH access
+  vpc_security_group_ids = ["${aws_security_group.default.id}"]
+
+  # We're going to launch into the same subnet as our ELB. In a production
+  # environment it's more common to have a separate private subnet for
+  # backend instances.
+  subnet_id = "${aws_subnet.default.id}"
 }
